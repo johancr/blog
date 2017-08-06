@@ -1,0 +1,296 @@
+<h2>A jUnit utility</h2>
+    <p>15-01-01</p>
+<p>
+Sometimes when writing tests, it's necessary to perform some task afterwards. 
+My colleague came up with a nice solution to this. His is by far better than what I'm presenting here, but I just want to show the idea.
+</p>
+<p>
+One situation when this is useful is when a test creates resources that need to be removed when the test is done, such as temporary files. 
+</p>
+<p>
+The simplest way to implement this, would be to create a list of runnables and call each of the run methods at the end of the test.
+</p>
+
+<pre>
+<code class="java">
+@Before
+public void setUp()
+{
+    tasks = new ArrayList&lt;Runnable&gt;();
+}
+
+@Test
+public void test()
+{
+    // Test code omitted
+
+    tasks.add(new Runnable() {
+        @Override
+        public void run()
+        {
+            // delete files
+        }
+    });
+}
+
+@After
+public void tearDown()
+{
+    for(Runnable task : tasks)
+    {
+        task.run();
+    }
+}
+
+</code>
+</pre>
+
+<p>
+This works, but it could be made clearer. We'll create two classes, Task and TaskManager.
+</p>
+
+<pre>
+<code class="java">
+public abstract class Task implements Runnable
+{
+}
+
+public interface TaskManager {
+
+    void addTask(Task task);
+    void runTasks();
+}
+</code>
+</pre>
+
+<p>
+Now we have the following.
+</p>
+
+<pre>
+<code class="java">
+@Before
+public void setUp()
+{
+    taskManager = new TaskManagerImpl();
+}
+
+@Test
+public void test()
+{
+    // Test code omitted
+
+    taskManager.add(new Task() {
+        @Override
+        public void run()
+        {
+            // delete files
+        }
+    });
+}
+
+@After
+public void tearDown()
+{
+    taskManager.runTasks();
+}
+</code>
+</pre>
+
+<p>
+We have the possibility to add a lot of behaviour to our two classes. One of 
+the things I'm missing is a way to know if the tasks were successful. We can 
+implement the runTask function like this.
+</p>
+
+<pre>
+<code class="java">
+public int runTasks() {
+
+    int tasksExecuted = 0;
+
+    for(Task task : tasks)
+    {
+        try 
+        {
+            task.run();
+            tasksExecuted++;
+        }
+        catch(Throwable ex)
+        {
+            // Task failed
+        }
+    }
+
+    return tasksExecuted;
+}
+</code>
+</pre>
+
+<p>
+And now we can see the number of tasks successfully run and use an assert on that.
+</p>
+
+<pre>
+<code class="java">
+@After
+public void tearDown()
+{
+    int tasksExecuted = taskManager.runTasks();
+}
+</code>
+</pre>
+
+<p>
+But now it gets a bit awkward, we'd have to compare with the number of tasks
+that are in the taskManager. A better way would be to only count the number of
+failed tasks. I still feel like it would be nice to know the number of successful
+tasks as well, so that we know for sure that they have been executed. Let's 
+return a TaskResult instead.
+</p>
+
+<pre>
+<code class="java">
+public TaskResult runTasks()
+{
+    int tasksExecuted = 0;
+    int tasksFailed = 0;
+
+    for (Task task : tasks)
+    {
+        try
+        {
+            task.run();
+            tasksExecuted++;
+        }
+        catch(Throwable ex)
+        {
+            tasksFailed++;
+        }
+    }
+    return new TaskResult(tasksExecuted, tasksFailed);
+}
+</code>
+</pre>
+<p>
+And then verify like so.
+</p>
+<pre>
+<code class="java">
+@After
+public void tearDown()
+{
+    TaskResult result = taskManager.runTasks();
+    assertEquals(0, result.getTasksFailed());
+}
+</code>
+</pre>
+
+<p>
+A feature that I find powerful is to create dependencies to other tasks, so
+that tasks only run once the task they depend on have been executed. The run step
+now becomes a bit complicated, so we'll put the logic into an executor.
+Below is the final version of the TaskManager.
+</p>
+
+<pre>
+<code class="java">
+public class TaskManagerImpl implements TaskManager {
+
+    private Stack&lt;Task&gt; tasks = new Stack&lt;Task&gt;();
+
+    public void addTask(Task task)
+    {
+        tasks.add(task);
+    }
+
+    public TaskResult runTasks()
+    {
+        return new TaskExecutor()
+            .executeTasks(reversedList(tasks));
+    }
+
+    private List&lt;Task&gt; reversedList(List&lt;Task&gt; tasks)
+    {
+        List&lt;Task> reversed = new ArrayList&lt;Task&gt;(tasks);
+        Collections.reverse(reversed);
+        return reversed;
+    }
+
+    private class TaskExecutor {
+
+        private int tasksExecuted = 0;
+        private int tasksFailed = 0;
+
+        public TaskResult executeTasks(List&lt;Task&gt; tasks) {
+
+            for (Task task : tasks) {
+
+                if (isTaskFinished(task))
+                {
+                    continue;
+                }
+
+                markAsFinished(task);
+                executeTask(task);
+            }
+
+            return new TaskResult(tasksExecuted, tasksFailed);
+        }
+
+        private boolean isTaskFinished(Task task)
+        {
+            return !tasks.contains(task);
+        }
+
+        private void markAsFinished(Task task)
+        {
+            synchronized (tasks)
+            {
+                tasks.remove(task);
+            }
+        }
+
+        public void executeTask(Task task) {
+
+            List&lt;Task&gt; dependantTasks = findDependantTasks(task.dependsOn());
+
+            if (!dependantTasks.isEmpty()) {
+                executeTasks(dependantTasks);
+            }
+
+            try
+            {
+                task.run();
+                tasksExecuted++;
+            }
+            catch (Throwable ex)
+            {
+                tasksFailed++;
+            }
+        }
+
+        public List&lt;Task&gt; findDependantTasks(List&lt;String&gt; dependsOn) {
+
+            List&lt;Task&gt; dependantTasks = new ArrayList&lt;Task&gt;();
+
+            if (!dependsOn.isEmpty())
+            {
+                synchronized (tasks)
+                {
+                    for (Task task : tasks)
+                    {
+                        if (dependsOn.contains(task.name()))
+                        {
+                            dependantTasks.add(task);
+                        }
+                    }
+                }
+            }
+
+            return dependantTasks;
+        }
+    }
+}
+</code>
+</pre>

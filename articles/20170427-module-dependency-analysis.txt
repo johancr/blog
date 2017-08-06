@@ -1,0 +1,191 @@
+<h2>Module dependency analysis</h2>
+<p>17-04-27</p>
+
+<p>
+I'm currently working as a maintainer of a system that is only two years old. When I started working on the system, I had trouble understanding it. What was it supposed to do? How? Now I think I understand it. Even though it's purpose is just converting data from one system to another, it's quite complex, and making changes to it takes an unreasonably long time to do.  
+</p>
+<p>
+In order convince the product owner that the complexity is a real issue, I'd first like to do an analysis. And hopefully my team can get some opportunity to make the system easier to understand. 
+</p>
+
+<h3>Modularity</h3>
+<p>
+A system that is modular is easy to understand, easy to reason about, and easy to modify. 
+</p>
+<p>
+Our system consists of two modules, one of them is core – which contains all the logic, entities, communication, persistence, etc. The other one is webapp – which exposes endpoints for a GUI.
+</p>
+<p>
+Since almost everything is in the core module, it's difficult to see how the parts of the system are connected. The package structure does help clarify a bit, but nothing prevents a class using any of the other classes in the module.
+</p>
+
+<h3>Tools for analyzing modularity</h3>
+<p>
+I've looked for tools that could help me tell how modular the system is, e.g. if there exists any dependency cycles. It was difficult to find something that fit my need, but I settled for <a href="https://github.com/clarkware/jdepend">JDepend</a>. It analyzes packages and presents some stats, most importantly if there exists dependency cycles between multiple packages.
+</p>
+<p>
+The other tools that I looked at were the following.
+<ul>
+    <li>JArchitect</li>
+    <li>Classcycle</li>
+    <li>Dependency finder</li>
+    <li>degraph</li>
+    <li>slizaa</li>
+    <li>Class Dependency Analyzer</li>
+</ul> 
+</p>
+
+<h3>Example usage of JDepend</h3>
+<p>
+There are multiple ways to present information using JDepend, as a GUI, as text, and as xml. I will show the text version as it's the easiest to display on the website.
+</p>
+<p>
+The application I'm analyzing is a small project I've been working on, it's purpose is not important for the analysis.
+</p>
+<pre>
+<code>
+java -cp jdepend-2.9.1.jar jdepend.textui.JDepend ~/Documents/letter
+
+(Some of the output)
+
+--------------------------------------------------
+- Package: letter.func
+--------------------------------------------------
+
+Stats:
+    Total Classes: 6
+    Concrete Classes: 2
+    Abstract Classes: 4
+
+    Ca: 3
+    Ce: 0
+
+    A: 0,67
+    I: 0
+    D: 0,33
+
+Abstract Classes:
+    letter.func.Applicative
+    letter.func.Functor
+    letter.func.IO
+    letter.func.Monad
+
+Concrete Classes:
+    letter.func.Reader
+    letter.func.State
+
+Depends Upon:
+    Not dependent on any packages.
+
+Used By:
+    letter.console
+    letter.service
+    letter.writer
+</code>
+</pre>
+
+<p>
+The output contains a lot of information about a package and it's content. In the above example, I've selected the analysis of the package letter.func. This package contains functional constructs that are used by most of the application. 
+</p>
+
+<p>
+The stats section shows the stats Ca, Ce, A, I, and D. They signify as follows:
+</p>
+<ul>
+<li>Ca (Afferent couplings): The number of packages that depend on the functionality in this package</li>
+<li>Ce (Efferent couplings): The number of packages that this package's functionality depends on</li>
+<li>A (Abstractness): The ratio of abstract classes versus concrete classes</li>
+<li>I (Instability): The ratio of Ce and Ce + Ca</li>
+<li>D (Distance from main sequence): The balance between abstractness and instability</li>
+</ul>
+
+<p>
+The package letter.func has 3 dependees (Ca), and depends on 0 other packages (Ce), therefore it's instability is 0. It contains 4 abstract classes, and 2 concrete ones, which makes the abstractness 0,67. Finally there is D, which is abs(A+I-1) = 0,33. 
+</p>
+
+<p>
+From these numbers we can tell quite a bit about this package. It's relatively stable to depend on since it's somewhat abstract and does not itself depend on other packages. What's odd about it is that the D value is not close to 0, due to A=0,67 and I=0. A package should ideally be either abstract and stable, or concrete and instable. This package could be made more abstract by moving the concrete classes to another package.
+</p>
+
+<p>
+It might seem pedantic to move the concrete classes to another package in order to increase the abstractness. But as a dependee on a certain package, knowing that this package is unlikely to change, also means your own code doesn't need to change as frequently.     
+</p>
+
+
+<h3>A concrete package</h3>
+<p>
+Below is the analysis of a package with concrete classes, letter.console.
+</p>
+<pre>
+<code>
+--------------------------------------------------
+- Package: letter.console
+--------------------------------------------------
+
+Stats:
+    Total Classes: 9
+    Concrete Classes: 7
+    Abstract Classes: 2
+
+    Ca: 1
+    Ce: 4
+
+    A: 0,22
+    I: 0,8
+    D: 0,02
+
+Abstract Classes:
+    letter.console.CommandAgent
+    letter.console.CommandConfig
+
+Concrete Classes:
+    letter.console.Command
+    letter.console.CommandRouter
+    letter.console.Console
+    letter.console.DefaultCommandAgent
+    letter.console.DefaultCommandConfig
+    letter.console.EmptyCommand
+    letter.console.package
+
+Depends Upon:
+    letter.core
+    letter.func
+    letter.service
+    letter.writer
+
+Used By:
+    letter.writer
+</code>
+</pre>
+
+<p>
+As this is a package that contains implementation, the numbers are almost reversed compared to letter.func. It is dependant to 4 other packages and contains more concrete classes than abstract ones. The D value is low, which shows that this package is not trying to be two things at the same time.
+</p>
+
+<p>
+However, this is not a package that you want other code to depend on. But even so, there is actually another package that does depend on this package – letter.writer. And not only that, there exists a circular dependency between these two packages as seen in the Depends Upon and Used By sections. Circular dependencies are also shown at the end of the report.
+</p>
+
+<pre>
+<code>
+--------------------------------------------------
+- Package Dependency Cycles:
+--------------------------------------------------
+
+letter.console
+    |
+    |   letter.writer
+    |-> letter.console
+
+letter.writer
+    |
+    |   letter.console
+    |-> letter.writer
+</code>
+</pre>
+
+<h3>Final words</h3>
+<p>
+Using JDepend for package analysis is both easy and rewarding. As has been said many times before, the first step in solving a problem is recognizing there is one.
+</p>
+

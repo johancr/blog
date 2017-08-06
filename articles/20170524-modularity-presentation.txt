@@ -1,0 +1,12 @@
+<h2>Presentation on modularity</h2>
+    <p>17-05-24</p>
+<p>
+By holding a presentation on the subject of modularity, I'm hoping to spark some interest in the team to think more about modularity when developing. 
+The slides can be found <a href="/static/pdf/modularity.pdf">here</a>.
+</p>
+<p>
+The presentation seemed well received. I was glad that the team was interested in learning more about stan4j and saw the benefits of well defined modules.
+</p>
+<p>
+Reflecting on my own experience, I think I'm more used to thinking about modularity in the small, on class level. Now that I'm learning about functional programming I've also begun thinking about it on method level. However, at my current employment, I believe that me and the rest of the team would gain a lot from thinking about and improving the design on package level.
+</p>

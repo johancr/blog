@@ -1,0 +1,205 @@
+<h2>Simple TDD Workshop - Part 2</h2>
+    <p>15-03-07</p>
+    <p><p>                                                                              
+For the next exercise, some preparations needs to be made. Create a project that contains an implementation of an XML-parser for a specific format, like the following.
+</p>                                                                             
+                                                                                 
+<pre>                                                                            
+<code class="xml">                                                                  
+// data.xml         
+                                                                
+&lt;root&gt;                                                                              
+    &lt;person name="Ann" shoe-size="39"/&gt;          
+    &lt;person name="Tom" shoe-size="41"/&gt;                                                                                                  
+&lt;/root&gt;                                                                             
+</code>                                                                             
+</pre>                                                                              
+                                                                                    
+<p>                                                                                 
+The xml parser can be constructed as follows.                                       
+</p>                                                                                
+                                                                                    
+<pre>                                                                               
+<code class="java">                                                                 
+// XmlElementParser.java                                                                
+ 
+public class XmlElementParser&lt;T&gt;
+{
+ private final XmlElementHandler&lt;T&gt; elementHandler;
+
+ public XmlElementParser(XmlElementHandler&lt;T&gt; elementHandler)
+ {
+  this.elementHandler = elementHandler;
+ }
+
+ public List&lt;T&gt; parse(InputStream xmlStream)
+ {
+  List&lt;T&gt; results = new ArrayList&lt;T&gt;();
+  XMLInputFactory inputFactory = XMLInputFactory.newFactory();
+
+  try
+  {
+   final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(xmlStream);
+
+   try
+   {
+    while (streamReader.hasNext())
+    {
+     streamReader.next();
+
+     if (streamReader.isStartElement() && isElementToHandle(streamReader))
+     {
+      T result = elementHandler.handle(
+        new XmlElement()
+        {
+         @Override
+         public String attribute(String name)
+         {
+          return streamReader.getAttributeValue(null, name);
+         }
+        });
+
+      if (result != null) { results.add(result); }
+     }
+    }
+   }
+   finally { streamReader.close(); }
+   }
+  catch (XMLStreamException ex)
+  {
+   throw new XmlParseException("failed to parse elements in XML document: " + ex, ex);
+  }
+  return results;
+ }
+
+ private boolean isElementToHandle(final XMLStreamReader streamReader)
+ {
+  return streamReader.getName().getLocalPart().equals(elementHandler.elementName());
+ }
+}                                      
+</code>                                                                             
+</pre> 
+
+<p>
+The interfaces XmlElement, XmlElementHandler are defined like this.
+</p>                                                                             
+<pre>                                                                               
+<code class="java">                                                                 
+// XmlElement.java                                                            
+public interface XmlElement
+{
+ String attribute(String name);
+}                                                         
+</code>                                                                             
+</pre>         
+        
+<pre>                                                                               
+<code class="java">                                                                 
+// XmlElementHandler.java                                                            
+public interface XmlElementHandler&lt;T&gt;
+{
+ String elementName();
+ T handle(XmlElement element);
+}                                                    
+</code>                                                                             
+</pre>         
+                                                                            
+<p>                                                                                 
+Tell the participants to utilize the xml parser to parse a person object. Tests first. However, it might not be obvious to understand how the parser should be used. Therefore, supply the tests for the xml parser itself.
+</p>                                                                                
+                                                                                    
+<pre>                                                                               
+<code class="java">                                                                 
+// XmlElementParserTest.java                                                            
+public class XmlElementParserTest
+{
+ @Rule
+ public ExpectedException thrown = ExpectedException.none();
+
+ @Test
+ public void parse()
+ {
+  XmlElementParser&lt;Integer&gt; parser = new XmlElementParser(personShoeSizeHandler());
+  InputStream xmlStream = getResourceAsString("data.xml");
+
+  List&lt;Integer&gt; sizes = parser.parse(xmlStream);
+
+  assertThat("number of parsed shoe sizes", sizes.size(), is(2));
+  assertThat("parsed sizes", sizes, hasItems(39, 41));
+ }
+
+ private XmlElementHandler&lt;Integer&gt; personShoeSizeHandler()
+ {
+  return new XmlElementHandler&lt;Integer&gt;()
+  {
+   @Override
+   public String elementName()
+   {
+    return "person";
+   }
+   @Override
+   public Integer handle(XmlElement element)
+   {
+    return Integer.parseInt(element.attribute("shoe-size"));
+   }
+  };
+ }
+
+ private InputStream getResourceAsString(String name)
+ {
+  return Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
+ }
+}                                                                                    
+</code>                                                                             
+</pre>                                                                              
+                                                                                    
+<p>                                                                                 
+This is another power of tests, it serves as good documentation. Now tests.
+</p>                                                                             
+                                                                  
+<pre>                                                                               
+<code class="java">  
+// PersonXmlDaoTest.java                                                               
+@Test
+public void parsePersons() throws FileNotFoundException
+{
+ PersonXmlDao dao = new PersonXmlDao();
+ List&lt;Person> persons = dao.getPersons();
+ Assert.assertThat(persons.size(), is(2));
+}                                                           
+</code>                                                                             
+</pre>                                    
+
+<p>
+And then some implementation.
+</p>                               
+<pre>                                                                               
+<code class="java">         
+// PersonXmlDao.java      
+                                                  
+public class PersonXmlDao {
+
+ public List&lt;Person&gt; getPersons() throws FileNotFoundException
+ {
+  XmlElementParser&lt;Person&gt; parser = new XmlElementParser(personHandler());
+  return parser.parse(Thread.currentThread().getContextClassLoader().getResourceAsStream("data.xml"));
+ }
+    
+ private XmlElementHandler&lt;Person&gt; personHandler()
+ {
+  return new XmlElementHandler&lt;Person&gt;() {
+   @Override
+   public String elementName() {
+    return "person";
+   }
+
+   @Override
+   public Person handle(XmlElement element) {
+    return new Person(element.attribute("name"),
+     Integer.parseInt(element.attribute("shoe-size")));
+     }
+    };
+   }
+}                                                   
+</code>                                                                             
+</pre>                     

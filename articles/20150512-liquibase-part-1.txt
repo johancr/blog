@@ -1,0 +1,152 @@
+<h2>Liquibase - Part 1</h2>
+    <p>15-05-12</p>
+    <p><p>
+Where I work, we have plenty of products that use databases, each product usually has its own setup of tables. Although it's rare for the tables to change, there are times when changes are rapid. One recent event like this was when my team adapted one of our products to a new platform - a platform which was concurrently being developed by another team. Having to do the adoption against a moving target was not a pleasant activity.
+</p>
+<p>
+In order to test the product, it had to be deployed on the local machine together with the new platform, which had its own set of tables. 
+Building against a new release almost always caused errors. There could be plenty of changes - new columns, removed columns, renamed columns, changed column types, etc.
+The sql script, used for creating the platform's tables, just dropped all the tables and created new ones - so after every release, it had to be run, as well as the scripts for loading our test data (which we first had to adapt).
+</p>
+<p>
+The way to alleviate database changes, is to offer migration scripts. Since the platform's developers worked as if they had no users, they only bothered modifying their main sql script. Migration scripts are used once a product is in production, but during development it's still only the one main sql script that is modified.
+</p>
+<p>
+There are several techniques to ease database migration, one such technique is using the tool Liquibase. There's also one tool named Flyway, and probably plenty of others of which I haven't heard about. If Liquibase had been used when we were migrating to the new platform, database changes would probably have been less annoying.
+</p>
+<p>
+Liquibase helps making controlled changes to a database schema. Whenever a change is added, it's made in form of a change set. Liquibase reads the change sets from files, and executes the ones not yet added to the database. It know which change sets that have been applied, by computing a hash for each change set. 
+</p>
+<p>
+The Liquibase distribution contains a shell script that executes the jar containing the Liquibase application. Before running it, I created a file named liquibase.properties. This file is automatically picked up by Liquibase. Mine has the following content.
+</p>
+
+<pre>
+<code>
+# liquibase.properties
+
+driver: org.h2.Driver
+url: jdbc:h2:tcp://localhost/~/testdb
+username: sa
+password:
+</code>
+</pre>
+
+<p>
+I use the h2 driver, which I've put into the Liquibase distributions lib directory. Having started an h2 server, the Liquibase shell script can be executed.
+</p>
+
+<pre>                  
+<code>                                                                                                                          
+./liquibase-3.3.3-bin/liquibase --changeLogFile=databaseChangelog.xml update                 
+</code>                                                                                                                                    
+</pre>                                                                            
+              
+<p>
+The file specified by changeLogFile is the file that contains the change sets. It itself may point to other files that themselves contain change sets.
+</p>
+
+<pre>
+<code>
+&lt;!-- databaseChangeLog.xml --&gt;                                                      
+                                                                                    
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;                                              
+&lt;databaseChangeLog                                                                  
+  xmlns=&quot;http://www.liquibase.org/xml/ns/dbchangelog&quot;                               
+  xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;                             
+  xsi:schemaLocation=&quot;http://www.liquibase.org/xml/ns/dbchangelog                   
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd&quot;&gt;          
+                                                                                    
+&lt;/databaseChangeLog&gt;
+</code>
+</pre>
+
+<p>
+Running Liquibase with the above change log file, without any change sets, adds two tables to the database - databasechangelog and databasechangeloglock. The former is used for keeping track of what change sets have been applied, the latter is used for preventing two Liquibase processes to update the database at the same time. Lets add our own first table and columns.
+</p>
+
+<pre>
+<code>
+&lt;!-- databaseChangeLog.xml --&gt;                                                   
+                                                                                 
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;                                           
+&lt;databaseChangeLog ...&gt;                                                          
+                                                                                 
+    &lt;changeSet id=&quot;1&quot; author=&quot;johan&quot;&gt;                                            
+        &lt;createTable tableName=&quot;Person&quot;&gt;                                         
+            &lt;column name=&quot;id&quot; type=&quot;int&quot; autoIncrement=&quot;true&quot;&gt;                   
+                &lt;constraints primaryKey=&quot;true&quot;/&gt;                                 
+            &lt;/column&gt;                                                            
+            &lt;column name=&quot;name&quot; type=&quot;varchar(32)&quot;/&gt;                             
+        &lt;/createTable&gt;                                                           
+    &lt;/changeSet&gt;                                                                 
+                                                                                 
+&lt;/databaseChangeLog&gt;
+</code>
+</pre>
+
+<p>
+This change set creates a table named Person, it consists of two columns. The id column is: an integer, automatically incremented, primary key. The name column is a varchar of length 32. To inspect the sql code that is generated by our change set, we execute the updateSQL command. 
+</p>
+
+<pre>                  
+<code>                                                                                                                          
+/liquibase-3.3.3-bin/liquibase --changeLogFile=databaseChangelog.xml updateSQL  
+                                                                                 
+-- *********************************************************************         
+-- Update Database Script                                                        
+-- *********************************************************************         
+-- Change Log: databaseChangelog.xml                                             
+-- Ran at: 2015-05-12 20:15                                                      
+-- Against: SA@jdbc:h2:tcp://localhost/~/test                                    
+-- Liquibase version: 3.3.3                                                      
+-- *********************************************************************         
+                                                                                 
+-- Lock Database                                                                 
+UPDATE PUBLIC.DATABASECHANGELOGLOCK SET LOCKED = TRUE, LOCKEDBY = &#39;j-macbook-air-2.local&#39;, LOCKGRANTED = &#39;2015-05-12 20:15:43.136&#39; WHERE ID = 1 AND LOCKED = FALSE;
+                                                                                 
+-- Changeset databaseChangelog.xml::1::johan                                     
+CREATE TABLE PUBLIC.Person (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(32), CONSTRAINT PK_PERSON PRIMARY KEY (id));
+                                                                                 
+INSERT INTO PUBLIC.DATABASECHANGELOG (ID, AUTHOR, FILENAME, DATEEXECUTED, ORDEREXECUTED, MD5SUM, DESCRIPTION, COMMENTS, EXECTYPE, LIQUIBASE) VALUES (&#39;1&#39;, &#39;johan&#39;, &#39;databaseChangelog.xml&#39;, NOW(), 1, &#39;7:334c8ef7598daa9363e6d2264e7fe95d&#39;, &#39;createTable&#39;, &#39;&#39;, &#39;EXECUTED&#39;, &#39;3.3.3&#39;);
+                                                                                 
+-- Release Database Lock                                                         
+UPDATE PUBLIC.DATABASECHANGELOGLOCK SET LOCKED = FALSE, LOCKEDBY = NULL, LOCKGRANTED = NULL WHERE ID = 1;
+</code>                                                                                                                                    
+</pre>                                                                            
+
+<p>
+By running the update command, liquibase adds the person table to our database.
+</p>
+
+<p>
+A change set should never be modified, this would invalidate the hash. Instead, a modification should be added as a new change set. Let's say that we are unhappy with the length of the name column, and want to widen it. The change set would be the following.
+</p>
+
+<pre>
+<code>
+&lt;!-- databaseChangeLog.xml --&gt;                                                   
+                                                                                 
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;                                           
+&lt;databaseChangeLog ...&gt;                                                          
+
+    &lt;!-- previous change set --&gt;    
+    ...
+
+    &lt;changeSet id=&quot;2&quot; author=&quot;johan&quot;&gt;                                            
+        &lt;modifyDataType columnName=&quot;name&quot;                                        
+            newDataType=&quot;varchar(64)&quot;                                            
+            tableName=&quot;Person&quot;/&gt;                                                 
+    &lt;/changeSet&gt; 
+                                                                                 
+&lt;/databaseChangeLog&gt;
+</code>
+</pre>
+
+<p>
+Had we instead modified the first change set, and put 64 instead of 32, Liquibase would exit with an error, stating that the hash mismatched, without any changes being applied.
+</p>
+
+<p>
+I'll continue to write about Liquibase in the next post.
+

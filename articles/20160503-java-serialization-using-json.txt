@@ -1,0 +1,150 @@
+<h2>Java serialization using json</h2>
+2016-05-03
+
+<p>
+One of our projects is based on services that communicate using SOAP and RMI, and these services share some common code, like exceptions. 
+
+Whenever the code for any of these exceptions changes, we have to redeploy all of our services, just to be sure that they all have the most recent common code. The reason for this is, while communication using SOAP is fine, the RMI calls fail if an exception's serialVersionUID differs between the caller and the callee.
+</p>
+
+<h3>Serialization in Java</h3>
+<p>
+To serialize objects in Java, you implement the Serializable/Externalizable interface. Only implementing the Serializable interface, the serialization is done using reflection. Implementing Externalizable lets you somewhat optimize the serialization.
+</p>
+
+<h3>Our requirements</h3>
+<p>
+The services should be able to understand each others exceptions, even though they are not of the same version. If an exception has been updated with a new field, then those services that have the updated version should be able to get the content of that field, while services that are not of the latest version will just ignore it. If a service that has not been updated, throws an exception when communicating with an updated service, then the updated service will just see that the new field is null.
+<br/>
+If the exception contains any causes, then we don't want them to leak out, so that they risk causing ClassNotFoundException on the calling side – we want to control exactly what information is being serialized.
+</p>
+
+<h3>Using Serializable</h3>
+<p>
+The default serializable mechanism goes a long way, as long as no one unjustifiably changes the serialVersionUID. Changing the serialVersionUID should only be done when incompatible changes are made, as described <a href="https://docs.oracle.com/javase/8/docs/platform/serialization/spec/version.html">here</a>. However, I've seen people changing it for no other reason than having made any sort of change to a class, given they even bother defining the serialVersionUID.
+<br/>
+If we want to control what data is serialized, we can, for example, create an inner class which holds only the data that we are interested in. We can then implement writeReplace on the class, and implement readResolve on the inner class. As in the example below.
+</p>
+
+<pre>
+<code class="java">
+public class TestException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    private final String moreInfo;
+
+    public TestException(String message, Throwable cause, String moreInfo) {
+        super(message, cause);
+        this.moreInfo = moreInfo;
+    }
+
+    private TestException(String moreInfo) {
+        this.moreInfo = moreInfo;
+    }
+
+    public String getMoreInfo() {
+        return moreInfo;
+    }
+
+    private Object writeReplace() throws ObjectStreamException {
+        return new TestExceptionDTO(moreInfo);
+    }
+
+    private static class TestExceptionDTO implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String moreInfo;
+
+        public TestExceptionDTO(String moreInfo) {
+            this.moreInfo = moreInfo;
+        }
+
+        private Object readResolve() throws ObjectStreamException {
+            return new TestException(moreInfo);
+        }
+    }
+}
+</code>
+</pre>
+
+<h3>Our json serializer</h3>
+<p>
+My colleague came up with a way to simplify the above code, which is to use a general serializer that handles the serialization.
+</p>
+
+<pre>
+<code class="java">
+public class Json implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private Class klass;
+    private String json;
+    private static final Gson gson = new Gson();
+
+    public static Json of(Object object) {
+        return of(object.getClass(), object);
+    }
+
+    public static Json of(Class klass, Object object) {
+        return new Json(klass, gson.toJson(object));
+    }
+
+    private Json(Class klass, String json) {
+        this.klass = klass;
+        this.json = json;
+    }
+
+    private void writeObject(ObjectOutputStream out) throws IOException, ClassNotFoundException {
+        out.writeUTF(klass.getName());
+        out.writeUTF(json);
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        klass = Class.forName(in.readUTF());
+        json = in.readUTF();
+    }
+
+    private Object readResolve() throws ObjectStreamException {
+        return gson.fromJson(json, klass);
+    }
+}
+</code>
+</pre>
+
+<p>
+The class to be serialized, then only needs to implement the writeReplace method, which invokes the json serializer.
+</p>
+
+<pre>
+<code class="java">
+public class TestException extends RuntimeException {
+
+    private final String moreInfo;
+
+    public TestException(String message, Throwable cause, String moreInfo) {
+        super(message, cause);
+        this.moreInfo = moreInfo;
+    }
+
+    public String getMoreInfo() {
+        return moreInfo;
+    }
+
+    private Object writeReplace() throws ObjectStreamException {
+        return Json.of(getClass(), new TestExceptionDTO(moreInfo));
+    }
+
+    private static class TestExceptionDTO {
+
+        private final String moreInfo;
+
+        public TestExceptionDTO(String moreInfo) {
+            this.moreInfo = moreInfo;
+        }
+    }
+}
+</code>
+</pre>

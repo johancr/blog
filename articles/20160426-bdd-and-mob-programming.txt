@@ -1,0 +1,120 @@
+<h2>BDD and mob programming</h2>
+2016-04-26
+
+<p>
+I recently saw a <a href="https://www.youtube.com/watch?v=8cy64qkgTyI">presentation</a> from JFokus on mob programming. Before having seen the presentation I was dismissive towards the practice, wondering how that would ever be cost-effective. But I've changed my mind now that I can see the benefits that it brings. It's not about working more efficiently, it's about sharing knowledge. 
+</p>
+
+<p>
+Another thing that has interested me lately, is how to take advantage of BDD. Our applications do have JBehave tests, but the tests are not as well written as they could. Now that we've been pushing on getting requirements as user stories, doing BDD would be beneficial as it fits well with user stories.
+</p>
+
+<h3>Workshops</h3>
+<p>
+One of my colleagues took the initiative to run a workshop where we practice mob programming and BDD, while at the same time solving an issue we're having with transactions. Before the first workshop, everyone created their own user stories and scenarios, which we discussed in order to find a couple that we could work with. 
+</p>
+
+<h3>Setup</h3>
+<p>
+In the presentation on mob programming, there is the notion of a driver and navigators. The driver is replaced regularly so that everyone needs to stay engaged. We're slowly adopting the practice by just having the same person be the driver, and let everyone navigate. 
+<br/>
+The sessions have been around 3 hours, which has worked well. The productivity level seems to be constant even though we don't have any longer breaks.    
+<br/>
+We used Cucumber instead of JBehave for this workshop. Cucumber just works out of the box, and integrates well with the test runner in Eclipse.
+</p>
+
+<h3>Our issue with transactions</h3>
+<p>
+Since we're using Guice for injecting entity managers, they need to be created by a provider. The provider has one issue where, running in the application server, it doesn't reuse entity managers that are part of the same transaction. By creating an api for transactions, it'd be easier to solve this issue, while at the same time enable us to simulate transactions in unit tests.
+</p>
+
+<h3>Our first user story</h3>
+<p>
+The story that we started with was something like the following: 
+<pre>
+	As a developer
+	I want a transaction api
+	So that I can begin, commit and rollback transactions
+</pre>
+The first scenario to this user story was then:
+<pre>
+	Scenario: Begin a transaction
+	Given a transaction context
+	When I begin a transaction
+	Then I get an active transaction
+</pre>
+<p>
+It felt good to start with this, so we went ahead and implemented the steps.
+</p>
+
+<h3>Step implementation</h3>
+<p>
+Just naively implementing the steps led us to something like this.
+</p>
+
+<pre>
+<code class="java">
+// ContextSteps.java
+public class ContextSteps {
+
+    private TxContext context;
+    private Tx begunTx;
+
+    @Given("^a transaction context$")
+    public void a_transaction_context() {
+        context = new TxContext();
+    }
+
+    @When("^I begin a transaction$")
+    public void i_begin_a_transaction() {
+        begunTx = context.begin();
+    }
+
+    @Then("^I get an active transaction$")
+    public void i_get_an_active_transaction() {
+        assertTrue("transaction is active", begunTx.isActive());
+    }
+}
+</code>
+</pre>
+
+<p>
+However, the true functionality was seriously lacking. See below.
+</p>
+
+<pre>
+<code class="java">
+// TxContext.java
+public class TxContext {
+
+    public Tx begin()
+    {
+        return new Tx();
+    }
+}
+</code>
+</pre>
+
+<pre>
+<code class="java">
+// Tx.java
+public class Tx {
+
+    public boolean isActive()
+    {
+        return true;
+    }
+}
+</code>
+</pre>
+
+<p>
+Obviously more scenarios are needed. And what about the unnecessary details? The requirement that we should be able to tell if a transaction is active, nonetheless for the transaction to even have the need for such an attribute. Clearly, we were affected by knowing of other transaction implementations.
+</p>
+
+<h3>Conclusion</h3>
+<p>
+I've really enjoyed these workshops, and I've learnt a lot from my colleagues. I find it easier to reason about stories and scenarios, and it aids in discussing problems and their solutions.
+<br/>
+Writing useful stories and scenarios takes practice, and it's not until you start implementing them that possible problems become evident.
+</p>

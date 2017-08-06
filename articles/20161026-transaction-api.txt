@@ -1,0 +1,269 @@
+<h2>Creating a transaction api</h2>
+<p>16-10-26</p>
+<p>
+As in many of our projects, we use JPA to persist entities. The entity managers are provided by Guice, as we can not inject them using @PersistenceContext, due to a somewhat invasive in-house security framework. However, I'm not complaining since using Guice gives a lot of flexibility, like seamlessly using persistence in unit testing.
+</p>
+
+<p>
+One thing that has been problematic, is that it isn't always so seamless as we would like to think. The object that provides the entity managers, the EntityManagerProvider, has a slightly different behaviour depending on whether it runs inside or outside of an application container.
+</p>
+
+<pre>
+<code class="java">
+// EntityManagerProvider.java
+EntityManager entityManager = LOCAL.get();
+
+if (nullOrClosed(entityManager)) {
+
+    entityManager = entityManagerFactory.createEntityManager();
+
+    try
+    {
+        // Join JTA transaction if in application container
+        entityManager.joinTransaction();
+    }
+    catch (TransactionRequiredException ex)
+    {
+        // Running in unit test
+        LOCAL.set(entityManager);
+    }
+}
+</code>
+</pre>
+
+<p>
+When running in an application container, whenever an entity manager is requested, you always get a new entity manager. Whereas when running in a unit test, the entity manager is reused. How come we've been able to live with this weird behaviour?
+</p>
+
+<p>
+The persisting operations have until recently been very simple. Even though there are multiple services involved in a transaction, no one entity is dependent on a related entity being changed/removed/added. Eventually we had to do just that, so the EntityManagerProvider needed to change.
+</p>
+
+<h3>The quick fix</h3>
+<p>
+The quickest way to get around this, was to keep using thread local, and attach a transaction listener.
+</p>
+
+<pre>
+<code class="java">
+// EntityManagerProvider.java
+EntityManager entityManager = LOCAL.get();
+
+if (nullOrClosed(entityManager)) {
+
+    entityManager = entityManagerFactory.createEntityManager();
+    LOCAL.set(entityManager);
+
+    joinTransaction(entityManager);
+}
+...
+private void joinTransaction(EntityManager entityManager) {
+    try {
+        entityManager.joinTransaction();
+        tx().addListener(new TxListener() {
+            @Override
+            public void onEnd() {
+                LOCAL.remove();
+            }
+        });
+    }
+    catch (TransactionRequiredException ex) {
+        // Running in junit test
+    }
+}
+
+private Tx tx() {
+    return txProvider.get();
+}
+</code>
+</pre>
+
+<p>
+The Tx interface allows for adding transaction listeners. The JTA implementation of the transaction provider connects the listeners to the JTA transaction by adapting the listeners to XAResources, and then attaching it to the transaction.
+</p>
+
+<pre>
+<code class="java">
+// JTATxProvider.java
+@Override
+public Tx get() {
+    Context context = contextProvider.get();
+
+    try
+    {
+        TransactionManager transactionManager =
+            (TransactionManager) context.lookup("java:comp/TransactionManager");
+        final Transaction transaction = transactionManager.getTransaction();
+
+        return new Tx() {
+
+            @Override
+            public void add(TxListener listener) {
+                try
+                {
+                    transaction.enlistResource(asXAResource(listener));
+                }
+                catch (Exception ex)
+                {
+                    throw new TransactionException("Could not add transaction listener: " + ex, ex);
+                }
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        throw new TransactionException("Could not get transaction: " + ex, ex);
+    }
+}
+</code>
+</pre>
+
+<h3>The need for a more sophisticated solution</h3>
+<p>
+While the quick fix is enough for the moment, we saw that there is a need for a more general and flexible solution. There is still the issue of having an EntityManagerProvider that behaves differently depending on the environment. Also, it feels awkward to push transaction logic onto that provider.
+</p>
+<p>
+But first and foremost, we want to abstract transaction handling so that we can also use it in tests. Using JTA, the application container creates a transaction when a service is called. The transaction begins at the start of the call, and is ended when the call returns - this is the context to which the transaction is bound. During a unit test, there must be something else that starts and ends the transaction, it is also a kind of context. We'll call it the scope.
+</p>
+<p>
+The scope is invisible to the client, only the application container or the unit test may interact with it. The client instead accesses a transaction from a transaction provider, which in turns gets the transaction from the scope.
+</p>
+
+<h3>The scope story</h3>
+<pre>
+    As a developer
+    I want a transaction scope
+    So that I can test transaction functionality
+        outside of an application container
+</pre>
+
+<p>
+The scenarios for the story:
+</p>
+
+<pre>
+    Scenario: Start a new transaction
+    Given a transaction scope
+    When the transaction is begun
+    Then a transaction is provided
+
+    Scenario: Get current transaction
+    Given a transaction scope with a started transaction
+    When I get a transaction
+    Then the transaction is gotten
+
+    Scenario: Get transaction that does not exist
+    Given a transaction scope
+    When I get a transaction
+    Then an exception is thrown
+
+    Scenario: Begin transaction when one already exists
+    Given a transaction scope with a started transaction
+    When the transaction is begun
+    Then no exception is thrown
+</pre>
+
+<p>
+The above scenarios (and a few others) generate the following interface for the scope.
+</p>
+
+<pre>
+<code class="java">
+public interface TxScope
+{
+    Tx begin();
+    void commit();
+    void rollback();
+    Tx get();
+}
+</code>
+</pre>
+
+<p>
+Now, whenever I want to test transaction functionality, I can create a scope, begin a transaction, do the work, and then commit it.
+</p>
+<p>
+How can I add transaction handling without my EntityManagerProvider having to know about it? I first thought of creating a specialized provider that gets the EntityManagers from the original provider, but I didn't want to add any annotations to my code in order to tell the providers apart.
+</p>
+
+<h3>Adding a transaction interceptor</h3>
+<p>
+By using an interceptor, I can add transaction functionality by supplying two Guice modules, one for binding the TxScope to a JTA implementation, and one for adding the interceptor.
+</p>
+
+<pre>
+<code class="java">
+public class TxSupportedJPAModule extends AbstractModule {
+
+    @Override
+    protected void configure() {
+        AbstractTxSupportedInterceptor&lt;EntityManager&gt; txInterceptor = new AbstractTxSupportedInterceptor&lt;EntityManager&gt;() {
+            @Override
+            protected Class&lt;EntityManager&gt; resourceClass() {
+                return EntityManager.class;
+            }
+
+            @Override
+            protected boolean hasExpired(EntityManager entityManager) {
+                return entityManager == null || !entityManager.isOpen();
+            }
+        };
+        requestInjection(txInterceptor);
+        bindInterceptor(Matchers.subclassesOf(Provider.class), Matchers.returns(Matchers
+                .subclassesOf(EntityManager.class)), txInterceptor);
+    }
+}
+</code>
+</pre>
+
+<p>
+The txInterceptor is attached to all providers that return an EntityManager. The AbstractTxSupportedInterceptor binds the resource to the current transaction, so that the resource can be retrieved 
+whenever it is needed.
+</p>
+
+<pre>
+<code class="java">
+public abstract class AbstractTxSupportedInterceptor&lt;T&gt; implements MethodInterceptor {
+
+    @Inject
+    private Provider&lt;Tx&gt; txProvider;
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Object invoke(MethodInvocation invocation) throws Throwable {
+        Tx tx = tx();
+        T resource = tx.lookup(resourceClass());
+
+        if (hasExpired(resource))
+        {
+            resource = (T) invocation.proceed();
+            postCreate(resource, tx);
+            tx.bind(resourceClass(), resource);
+        }
+
+        return resource;
+    }
+
+    private Tx tx() {
+        return txProvider.get();
+    }
+
+    protected abstract Class&lt;T&gt; resourceClass();
+
+    protected boolean hasExpired(T resource) {
+        return resource == null;
+    }
+
+    protected void postCreate(T resource, Tx tx) {
+    }
+}
+</code>
+</pre>
+
+<h3>Final words</h3>
+<p>
+I think the api turned out alright. My biggest concern was how to add the transaction functionality without affecting the current code. A less intrusive way to achieve that, would be to use the Java service provider to plug in the Guice modules.
+</p>
+<p>
+The original EntityManagerProvider is still behaving weirdly, but it's less of a problem now that the entity managers are managed by the transaction.
+</p>

@@ -1,0 +1,171 @@
+<h2>Converting from Java to Scala</h2>
+    <p>15-01-21</p>
+    <p><p>
+Since Scala seems to stay around for a while I thought I'd try it out. I've already tried it once when I took the Coursera course, but for some reason I didn't really appreciate the syntax. 
+</p>
+<p>
+This website is built using Spring Boot, and so I wanted to see if it would be possible to translate the code to Scala. It surprised me how easy this actually was, although there were a few gotchas of which I'm writing about in this post.
+</p>
+<h3>Injection</h3>
+<p>
+The way I was able to inject resources was to use the following syntax.
+</p>
+<pre>
+<code class="scala">
+@Inject
+val itemService: ItemService = null
+</code>
+</pre>
+
+<h3>Annotation parameters</h3>
+<p>
+The syntax for specifying array parameters is to use the Array() constructor.
+</p>
+<pre>
+<code class="scala">
+@RequestMapping(value = Array("/items"), method = Array(RequestMethod.GET))
+def getItems(model: Model) : String = {
+    ...
+}
+</code>
+</pre>
+
+<h3>Entity and DAO</h3>
+<p>
+For entity IDs I had to use java.lang.Long since the Scala Long isn't serializable. Lists are fetched as java.util.List.
+</p>
+<pre>
+<code class="scala">
+@Entity
+class ItemEO {
+
+    @Id
+    @GeneratedValue
+    var id : java.lang.Long = _
+    ...
+}
+</code>
+</pre>
+<pre>
+<code class="scala">
+@Repository
+trait ItemDao extends JpaRepository[ItemEO, java.lang.Long] {
+
+    def findByOrderByTimestampDesc(pageable: Pageable) : java.util.List[NewsItemEO]
+}
+</code>
+</pre>
+
+<p>
+In the service it is easy to convert to Scala List like follows.
+</p>
+
+<pre>
+<code class="scala">
+import scala.collection.JavaConversions._
+...
+val itemEOs = itemDao.findByOrderByTimestampDesc(pageable).toList;
+</code>
+</pre>
+
+<p>
+But when the list is sent to Thymeleaf, it has to be of Java type. This time by importing scala.collection.Java<b>Converters</b>._
+</p>
+
+<pre>
+<code class="scala">
+import scala.collection.JavaConverters._
+...
+val items = itemService.findAll(pageable).asJava
+model.addAttribute("items", items)
+</code>
+</pre>
+
+<h3>Reserved keywords</h3>
+<p>
+The only reserved keyword that I stumbled upon was type and with. They are easily handled by surrounding with `
+</p>
+<pre>
+<code class="scala">
+// From ItemEO.scala
+@Type(`type` = "text")
+var content : String = _
+</code>
+</pre>
+
+
+<h3>Tests</h3>
+<p>
+Converting from jUnit to ScalaTest demanded a few changes, and I still have some minor issues to deal with. For the moment I'm using @RunWith(classOf[JUnitRunner]) which enables jUnit to run the tests, but it is also possible to instead use the maven plugin scalatest-maven-plugin.
+</p>
+<p>
+Since I couldn't get injection to work, I used Springs TestContextManager to manually inject the resources. Scala wouldn't let me call build() on the MockMvc builder so I had to split the statement into two parts.
+</p>
+<pre>
+<code class="scala">
+  before {
+    val testContextManager = new TestContextManager(this.getClass())
+    testContextManager.prepareTestInstance(this)
+
+    val builder = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+      .addFilters(springSecurityFilterChain)
+      .asInstanceOf[DefaultMockMvcBuilder]
+    mockMvc = builder.build()
+  }
+</code>
+</pre>
+
+<p>
+The biggest problem was that the @Transactional annotation no longer had any effect. A wild guess is that the ScalaTest test methods aren't really methods like in Java, and so no transaction management is applied.
+</p>
+
+<h3>SpringApplication and SecurityConfiguration</h3>
+<p>
+To get Spring Boot to start, the Java code looked like the following.
+</p>
+<pre>
+<code class="scala">
+@EnableAutoConfiguration
+@EnableJpaRepositories
+@EnableTransactionManagement
+@SpringBootApplication
+public class Application {     
+       
+    public static void main(String[] args) {       
+        SpringApplication app = new SpringApplication(Application.class);      
+        app.run(args);     
+    }      
+}
+</code>
+</pre>
+<p>
+Which in Scala became this:
+</p>
+<pre>
+<code class="scala">
+@EnableAutoConfiguration
+@EnableJpaRepositories
+@EnableTransactionManagement
+@SpringBootApplication
+class Application
+
+object Application extends App {
+  SpringApplication.run(classOf[Application]);
+}
+</code>
+</pre>
+<p>
+For the security configuration I again had to split up the statement into two parts since Scala wouldn't let it compile.
+</p>
+
+<pre>
+<code class="scala">
+override def configure(http: HttpSecurity) : Unit = {
+    http.authorizeRequests.
+        antMatchers(HttpMethod.GET, "/items").permitAll.
+        antMatchers(HttpMethod.POST, "/items").hasRole("ADMIN").
+        antMatchers("/items-editor/**").hasRole("ADMIN")
+        http.httpBasic()
+}
+</code>
+</pre>

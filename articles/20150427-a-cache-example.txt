@@ -1,0 +1,224 @@
+<h2>A cache example </h2>
+    <p>15-04-27</p>
+    <p><p>
+Recently I got the chance to implement a caching mechanism in order to reduce the amount of calls made to a remote service. I found that it was a fun exercise, and so I thought I'd write a bit about it. As always, it starts with a test.
+</p>
+
+<pre>
+<code class="java">
+public class CacheImplTest
+{
+    private Cache&lt;String, String&gt; cache;
+
+    @Test
+    public void emptyCacheReturnsNoResult()
+    {
+        cache = new CacheImpl&lt;String, String&gt;();
+
+        String result = cache.get("keyNotInCache");
+
+        assertThat(result, is(nullValue()));
+    }
+}
+</code>
+</pre>
+
+<p>
+Secondly, the interface needs to be created.
+</p>
+
+<pre>
+<code class="java">
+public interface Cache&lt;K, V&gt;
+{
+    public V get(K key);
+}
+</code>
+</pre>
+
+<p>
+And then implementation.
+</p>
+
+<pre>
+<code class="java">
+public class CacheImpl&lt;K, V&gt; implements Cache&lt;K, V&gt;
+{
+    @Override
+    public V get(K key)
+    {
+        return null;
+    }
+}
+</code>
+</pre>
+
+
+<p>
+To actually put something in our cache there needs to be a method that updates it.
+</p>
+
+<pre>
+<code class="java">
+@Test                                                                        
+public void updatedCacheReturnsCachedResult()                                      
+{                                                                            
+    cache = new CacheImpl&lt;String, String&gt;();                               
+    String key = "key";                                                      
+    String value = "value";                                                                                                                               
+    Map&lt;String, String&gt; data = new HashMap&lt;String, String&gt;();                
+    data.put(key, value);                                                    
+                                                                             
+    cache.update(data);                                                      
+    String result = cache.get(key);                                          
+                                                                             
+    assertThat(result, is(value));                                           
+}  
+</code>
+</pre>
+
+<p>
+The update method is added to the interface and the implementation. The following code makes the test pass.
+</p>
+
+<pre>
+<code class="java">
+private static class CacheImpl&lt;K, V&gt; implements Cache&lt;K, V&gt;              
+{                                                                            
+    private Map&lt;K, V&gt; cache = new HashMap&lt;K, V&gt;();                                   
+                                                                             
+    @Override                                                                
+    public V get(K key) 
+    {                                                    
+        return cache.get(key);                                               
+    }                                                                        
+                                                                             
+    @Override                                                                
+    public void update(Map&lt;K, V&gt; data)                                       
+    {                                                                        
+        cache.putAll(data);                                                  
+    }                                                                        
+} 
+</code>
+</pre>
+
+<p>
+The cache should be cleared after a certain amount of time so that the data isn't too old.  
+</p>
+
+<pre>
+<code class="java">
+@Test
+public void cacheIsEmptiedWhenTimeToLiveHasExpired()
+{
+    // Looks like our previous test, only that we need
+    // some way to invalidate the cache manually.
+}
+</code>
+</pre>
+
+<p>
+There needs to be some way to know when the cache is invalid, so that it can cleared. For example by using a timer mechanism. 
+</p>
+
+<pre>
+<code class="java">
+public interface Timer                                                      
+{                                                                            
+    public boolean expired();                                                
+                                                                             
+    public void setTimerInSeconds(int seconds);                              
+}
+</code>
+</pre>
+
+<p>
+In the cache implementation, the get method can now check if the cache is valid, before returning a result.
+</p>
+
+<pre>
+<code class="java">
+public V get(K key)
+{
+    if (cacheTimeExpired())
+    {
+        cache.clear();
+    }
+
+    return cache.get(key);
+}
+
+public void update(Map&lt;K, V&gt; data)
+{
+    if (cacheTimeExpired())
+    {
+        cache.clear();
+        setNextCacheClear();
+    }
+
+    cache.putAll(data);
+}
+
+private boolean cacheTimeExpired()
+{
+    return timer.expired();
+}
+
+private void setNextCacheClear()
+{
+    timer.setTimerInSeconds(timeToLive);
+}
+</code>
+</pre>
+
+<p>
+In the test we can provide our own Timer implementation, which let's us directly control when the timer expires.
+</p>
+
+<pre>
+<code class="java">
+@Test                                                                        
+public void cacheIsEmptiedWhenTimeToLiveHasExpired()
+{                                                                            
+    TestTimer timer = new TestTimer();                                       
+    cache = new CacheImpl&lt;String, String&gt;(timer);                          
+    String key = "key";                                                      
+    String value = "value";                                                                                                                               
+    Map&lt;String, String&gt; data = new HashMap&lt;String, String&gt;();                
+    data.put(key, value);                                                    
+                                                                             
+    cache.update(data);                                                      
+    timer.setExpired(true);                                                  
+    String result = cache.get(key);                                          
+                                                                             
+    assertThat(result, is(nullValue()));  
+}  
+
+private class TestTimer implements Timer                                     
+{                                                                            
+    private boolean expired = false;                                         
+                                                                             
+    public void setExpired(boolean expired)                                  
+    {                                                                        
+        this.expired = expired;                                              
+    }                                                                        
+                                                                             
+    @Override                                                                
+    public boolean expired()                                                 
+    {                                                                        
+        return expired;                                                      
+    }                                                                        
+                                                                             
+    @Override                                                                
+    public void setTimerInSeconds(int seconds)                               
+    {                                                                        
+    }                                                                        
+} 
+</code>
+</pre>
+
+
+<p>
+A lot of other functionality can be added. Limiting the amount of cached entries, a getAll method, a cache loader that provides a method for fetching entries not found in the cache, thread safety, use java.util.Timer, etc.
+However, we decided to use Guavas cache implementation, which satisfied all of our requirements out of the box. 
+</p>

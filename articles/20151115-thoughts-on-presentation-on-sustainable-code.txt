@@ -1,0 +1,77 @@
+<h2>Thoughts on presentation on sustainable code</h2>
+<p>15-11-15</p>
+<p>
+A while ago I visited a meetup where we watched <a href="https://vimeo.com/138774243">a presentation on developing sustainable software</a>. Afterwards we had a discussion on the subject of the presentation. Unfortunately the discussion format was not very good, and so nothing interesting came out of it. I instead reflected on the talk myself and am now writing down my thoughts in this post.
+</p>
+<p>
+<em>01:00 - She has been maintaining systems that have been made with sustainability in mind. Says it's worse than spaghetti code.</em> 
+<br>
+— She doesn't really explain the reason for this opinion. She makes a good point in that it might be better if the developers who develop a system are also the ones who maintain it. The developers are then more inclined to creating code that they want to continue working with, and they also learn what makes code maintainable. Some developers jump from one green field project to the next, and so never learn from their mistakes, thus creating burden for the maintainers. 
+</p>
+<p>
+<em>03:00 - A sustainable system is one that is easy to extend with new functionality. The problem is that we create projects that we believe are complete, future-proof, because that's what the customers want.</em>
+<br>
+— It will get clearer what she actually means with this a bit further down. Several of the problems that she mentions in this talk can be effectively addressed with better development processes, however, she does not arrive at this conclusion. 
+</p>
+<p>
+<em>04:30 - The only way to keep a system relevant is to continuously change it, removing old bits and adding new ones. If not, the application will become Stonehenge, no one knows what it does or how it works</em>
+<br>
+— I interpret this to mean refactoring and modularizing the code, which is good practice. To keep a system understandable, I believe proper documentation and documenting tests are essential.  
+</p>
+<p>
+<em>05:30 - No one likes working with other people's code. She thinks it's a waste of time to write code that is sustainable, because the sustaining team will want to throw it away anyway
+</em>
+<br>
+— I understand that she is talking about extremes, and I can only speak for myself on this. There are people whose code I enjoy working with, and sometimes other's code that I don't enjoy as much. If the code is shitty, then I'm grateful if the developers thought about making the code sustainable enough so that I can easily replace the old implementation. Making code sustainable is not a waste of time.
+</p>
+<p>
+<em>07:00 - Don't use author tag. Write as little code as possible. More features leads to more complications, and if you are not writing features then you are writing constraints.</em>
+<br>
+— The author tag seemed like a hot topic. The tag might be useful if you want to get hold of the original author in case you've got questions on the implementation or the technology. Other than that, I don't care whether it's used or not.
+<br>
+Writing as little as possible is one way of avoiding feature creep. It is, however, not very helpful advice. The question that goes unanswered is: how? If developers are adding unnecessary features and constraints, then they might not be coding to satisfy the requirements, or the requirements are not clear. This can be helped by using TDD and BDD - and stop implementing features when the requirements are met.  
+</p>
+<p>
+<em>11:00 - Don't use modelling tools to model and generate code.</em> 
+<br>
+— In many of the projects I work in, we use Rational Rose models that were designed by some architect many years ago. I think that it's a good tool, as long as the developers know how to use it. Sadly, us developers only have just enough competence with Rose to keep us floating. So if you are using a modelling tool, make sure that all developers know how to use it.
+</p>
+<p>
+<em>13:00 - Risk prevention vs risk mitigation</em>
+<br>
+— She shows one example where risk prevention makes it impossible to add a spouse of the same gender. Thinking from a risk mitigating perspective, it's better to let some errors slip by, as long they are easy to fix afterwards.
+<br>
+This relates to what she said earlier about writing as little as possible. It seems as if, in her experience, developers like to practice risk prevention more than risk mitigation. As always, prevent those things that are difficult to mitigate, otherwise, facilitate fixing errors.
+</p>
+<p>
+<em>15:00 - Develop so that you can always have a working deliverable. Compares the making of a car by first delivering a skateboard, and then a bike etc.</em> 
+<br>
+— While this is common sense nowadays, building software in modules and then putting them together is also a good strategy, but this should be done on a lower level.
+</p>
+<p>
+<em>18:30 - Things should be easy to remove, and if something is reused in many places, it is difficult to do so.</em>
+<br>
+— Using dependency injection enables you to easily switch implementations, even though it is used in many places. I got the impression that she had not yet realized the benefits of programming with interfaces, otherwise I don't think she would have mentioned this as an issue.  
+</p>
+<p>
+<em>21:00 - Avoid creating complicated abstractions. If the abstractions are too complex, the maintainers might be scared of touching the code, and instead put code in places it doesn't belong.</em>
+<br>
+— This is just the reality of software development. The chance that the maintainers are experienced enough to deal with advanced abstractions, is too small. So if you want to be sure that the maintenance cost won't go through the roof - make the application really simple, somehow.  
+</p>
+<p>
+<em>24:00 - Make it easy for the maintainers to navigate, by partitioning the code by how it's used, not by functionality. Maintainers want the code to be organized from a user perspective, and don't mind code duplication in order to get that.</em>
+<br>
+— She argues that maintainers are only dealing with user related issues, so organizing the code this way helps tracking down where changes need to be made. I think I'd prefer whatever organization the developers would use, as this better conveys intent.
+</p>
+<p>
+<em>26:00 - She tells a story about a system she was working on, and her task was to add a menu item. This proved to be difficult, as the implementation was not straightforward.</em>
+<br>
+— She wants to make a couple of points by showing the process of how the menu item was added. First, the way items are added is too complex. She just wants to add the item, but it seems as if she doesn't want to understand the reason for how it's done. Maybe she would have been able to complete the task faster, had she tried understanding why implementation was the way it was. 
+<br>
+Second, the use of interfaces is bad. She says that there will ever only be one implementation of an interface, and interfaces frighten developers - they do not dare touching that code. This is ironic, as the use of interfaces would actually help her switch out the implementation to something less complex. In short, complex design is difficult to understand, and some people just can't be bothered understanding stuff... 
+</p>
+<p>
+<em>36:30 - Maintainers prefer doing things their way, and they are more efficient doing so.</em>
+<br>
+— The key to developing sustainable software seems to be delivering something that won't confuse the maintainers. If they can't be bothered understanding the architecture, then it's inevitable that maintenance will be costly. As stated earlier, document well, both in writing and in code. Make a proper handover to the maintenance team, and listen to their criticism.
+</p>

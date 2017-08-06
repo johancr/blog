@@ -1,0 +1,268 @@
+ <h2>Dependency injection and testing</h2>
+    <p>15-04-06</p>
+    <p><p>
+For me, dependency injection was a concept that I didn't encounter until I started working with enterprise applications. Since there are some developers at my workplace who, as I before, haven't used DI, I've been wanting to do a talk/workshop to help them get started. So I've put together three stages of an application to show how, using this concept, the design can be improved.
+</p>
+<p>
+There is a lot that can be said about DI, but I like how it helps structuring applications and promotes design that facilitates testing. 
+</p>
+<h3>A naive approach</h3>
+<p>
+Here is a library application that has a book service, which in turn uses a book dao.
+</p>
+
+<pre>
+<code class="python">
+# no_di.py
+
+class BookDaoImpl(object):
+    def get_all(self):
+        pass
+
+    def save(self):
+        pass
+
+
+class BookServiceImpl(object):
+    def __init__(self):
+        self.book_dao = BookDaoImpl()
+
+    def get_books(self):
+        return self.book_dao.get_all()
+
+    def save_book(self, book):
+        self.book_dao.save(book)
+
+
+class Library(object):
+    def __init__(self):
+        self.book_service = BookServiceImpl()
+
+if __name__ == '__main__':
+
+    library = Library()
+</code>
+</pre>
+
+<p>
+So what happens when we create our library? The book_service field is assigned an object of the implementation of the book service. By doing this, the book service constructor creates and assigns an object of the book dao implementation.
+<br/>
+This works fine for now, but there are some concerns, for example, how can we test that the service works as expected? Since the implementation of the book service is tied to the implementation of the book dao, we can't test the service without the dao. However, that is a small lie. Since this is Python, we can easily change the dao, as in the following test.
+</p>
+
+<pre>
+<code class="python">
+# no_di_test.py 
+
+import unittest
+from no_di import BookServiceImpl
+
+class BookServiceImplTest(unittest.TestCase):
+
+    def setUp(self):
+        self.service = BookServiceImpl()
+        self.service.book_dao = BookDaoMock()
+
+    def test_get_all(self):
+        self.assertEquals(['Working effectively with legacy code'], self.service.get_books())
+
+    def test_save_book(self):
+        self.service.save_book('50 Shades')
+        self.assertEquals(['Working effectively with legacy code', '50 Shades'], self.service.get_books())
+
+
+class BookDaoMock(object):
+    def __init__(self):
+        self.books = ['Working effectively with legacy code']
+
+    def get_all(self):
+        return self.books
+
+    def save(self, book):
+        self.books.append(book)
+
+if __name__ == '__main__':
+    unittest.main()
+</code>
+</pre>
+
+<p>
+In the setup method, we reassign the book dao to our mock, so that we can test the service without accessing any persistence layer. So this does the trick, but it's a bit messy, and what if we wanted to use a different book dao implementation? We'd had to locate all of the places in our code where it is constructed, which might be more than one. 
+</p>
+
+<h3>Improving the design</h3>
+<p>
+A better way to implement our application would be to extract the instantiation of the constructor parameters, as follows.
+</p>
+
+<pre>
+<code class="python">
+# no_di_better.py
+
+class BookDaoImpl(object):
+    def get_all(self):
+        pass
+
+    def save(self):
+        pass
+
+
+class BookServiceImpl(object):
+    def __init__(self, book_dao):
+        self.book_dao = book_dao
+
+    def get_books(self):
+        return self.book_dao.get_all()
+
+    def save_book(self, book):
+        self.book_dao.save(book)
+
+
+class Library(object):
+    def __init__(self, book_service):
+        self.book_service = book_service
+
+if __name__ == '__main__':
+
+    book_dao = BookDaoImpl()
+    book_service = BookServiceImpl(book_dao)
+    library = Library(book_service)
+</code>
+</pre>
+
+<p>
+Now testing becomes a bit cleaner.
+</p>
+
+<pre>
+<code class="python">
+# no_di_better_test.py 
+
+import unittest
+from no_di_better import BookServiceImpl
+
+class BookServiceImplTest(unittest.TestCase):
+
+    def setUp(self):
+        self.service = BookServiceImpl(BookDaoMock())
+
+    def test_get_all(self):
+        self.assertEquals(['Working effectively with legacy code'], self.service.get_books())
+
+    def test_save_book(self):
+        self.service.save_book('50 Shades')
+        self.assertEquals(['Working effectively with legacy code', '50 Shades'], self.service.get_books())
+
+
+class BookDaoMock(object):
+    def __init__(self):
+        self.books = ['Working effectively with legacy code']
+
+    def get_all(self):
+        return self.books
+
+    def save(self, book):
+        self.books.append(book)
+
+if __name__ == '__main__':
+    unittest.main()
+</code>
+</pre>
+
+<p>
+However, it's still a bit tricky to change the implementations that we are using. DI helps us with this. 
+</p>
+
+<h3>Using dependency injection</h3>
+
+<pre>
+<code class="python">
+# with_di.py
+
+import pinject
+
+class BookDaoImpl(object):
+    def get_all(self):
+        pass
+
+    def save(self):
+        pass
+
+class BookServiceImpl(object):
+    @pinject.inject()
+    def __init__(self, book_dao):
+        self.book_dao = book_dao
+
+    def get_books(self):
+        return self.book_dao.get_all()
+
+    def save_book(self, book):
+        self.book_dao.save(book)
+
+
+class Library(object):
+    @pinject.inject()
+    def __init__(self, book_service):
+        self.book_service = book_service
+
+class LibraryBindingSpec(pinject.BindingSpec):
+    def configure(self, bind):
+        bind('book_dao', to_class=BookDaoImpl)
+        bind('book_service', to_class=BookServiceImpl)
+
+
+if __name__ == '__main__':
+
+    obj_graph = pinject.new_object_graph(only_use_explicit_bindings=True, 
+                     binding_specs=[LibraryBindingSpec()])
+
+    library = obj_graph.provide(Library)
+</code>
+</pre>
+
+<p>
+First we create a binding spec, which holds the information of what implementations we use. Then, in order to create our objects, we use pinjects object graph, which now has the necessary information  to do that. So if we now would like to change any of the implementations, it is easy to make that adjustment in the binding spec. The tests can have the same appearance as the previous one, or it too may take advantage of DI.
+</p>
+
+<pre>
+<code class="python">
+# with_di_test.py
+
+import unittest
+import pinject
+from with_di import BookServiceImpl
+
+class BookServiceImplTest(unittest.TestCase):
+
+    def setUp(self):
+        obj_graph = pinject.new_object_graph(only_use_explicit_bindings=True,
+                             binding_specs=[TestBindingSpec()])
+        self.service = obj_graph.provide(BookServiceImpl)
+
+    def test_get_all(self):
+        self.assertEquals(['Working effectively with legacy code'], self.service.get_books())
+
+    def test_save_book(self):
+        self.service.save_book('50 Shades')
+        self.assertEquals(['Working effectively with legacy code', '50 Shades'], self.service.get_books())
+
+
+class BookDaoMock(object):
+    def __init__(self):
+        self.books = ['Working effectively with legacy code']
+
+    def get_all(self):
+        return self.books
+
+    def save(self, book):
+        self.books.append(book)
+
+
+class TestBindingSpec(pinject.BindingSpec):
+    def configure(self, bind):
+        bind('book_dao', to_class=BookDaoMock)
+
+if __name__ == '__main__':
+    unittest.main()
+</code>
+</pre>

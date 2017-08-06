@@ -1,0 +1,47 @@
+<h2>Lessons from a recent project</h2>
+15-12-22
+<p>
+My team recently finished working on a project for another division. The project was time critical, so two developers were added to our team. It was a valuable experience for me to work on a project that was so demanding, and together with two unfamiliar developers. This post is my reflection on this experience.
+</p>
+<h3>Different culture</h3>
+<p>
+Even though the new developers had been working for many years in our organization, it was surprising to me how different their way of working was. In hindsight I think I shouldn't have expected them to be familiar working the way my team is used to.
+</p>
+<h3>Daily stand-up</h3> 
+<p>
+I should have clearly defined the rules from day one. One of the developers was used to talking for several minutes, and not just about what he had done the day before, etc. My mistake was to pick up on this too late, so I just seemed rude when asking if it was my turn to talk.
+</p>
+<h3>Scrum board</h3> 
+<p>
+Same goes for the scrum board, make sure that the workflow is understood. Thinking that devtesting was optional led to some confusion. 
+</p>
+<h3>Code</h3> 
+<p>
+We usually write code so that we are not too dependent on frameworks. To some, this seems like a waste of time, which makes it difficult to convince people to write this way. Also make sure that everyone has the same understanding of what constitutes a service, a component, etc.
+</p>
+<h3>Asking for more developers</h3>
+<p>
+When starting this project, I was hoping to meet some of our best developers, since they were the ones we'd need to get the job done in time. Later I realized that this was not feasible given the time frame. The developers we were given were the ones that other divisions felt they could spare, so naturally they were not the strongest ones. 
+<br>
+When my team was given this project, we were asked to name people that we knew were good. Unfortunately, the ones we named, were not available. The next time I find myself in a similar situation, I will put more effort into finding the right people.
+</p>
+<h3>Old habits</h3>
+<p>
+Some of the practice our new members used was weird to me, but apparently completely normal where they came from. Several times they explained their choices by saying that this was how everyone did in their division.
+</p>
+<h3>Getting the naming right</h3>
+<p>
+Holding on to the name of a class, database table, etc. can be a problem. If I can't come up with a good name, I settle for anything until I think of something better. We had a couple of issues with bad naming, which was difficult to rectify due to emotional attachment.
+</p>
+<h3>Learning opportunities</h3>
+<p>
+Even though I didn't learn much from the new developers, I still got the chance to learn by teaching them. One of my colleagues, who's a very experienced developer, gave them some pointers which I also picked up on.
+</p>
+<h3>Adapting to the environment</h3>
+<p>
+Since we were working for another division, we needed to use their repository. Their build system was not that easy, so we used something else for our code - but in the end we decided to do everything their way, so that the handover would be as painless as possible.  
+</p>
+<h3>Handling novice developers</h3>
+<p>
+Unfortunately, the new developers were not good coders, so they spent a lot of time on simple functionality. I think this was for the better, since it meant we didn't have to clean as much code. It reminded me of <a href="http://www.joelonsoftware.com/articles/fog0000000332.html">this (Neutralize The Bozos)</a>, which, from time to time applies to me as well. 
+</p>

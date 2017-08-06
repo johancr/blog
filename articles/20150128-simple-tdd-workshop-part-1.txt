@@ -1,0 +1,218 @@
+<h2>Simple TDD Workshop - Part 1</h2>
+    <p>15-01-28</p>
+    <p><p>
+One of my colleagues held a quick TDD workshop. The recipe he used was the following. 
+</p>
+<p>
+Start with an empty project, ask for a calculator class that can add two arguments, but write the test first. Follow the red, green, refactor workflow. So the first thing to do would be to create something like the following.
+</p>
+<pre>
+<code class="java">
+// CalculatorTest.java
+
+@Test
+public void add() 
+{
+    Calculator calculator = new Calculator();
+}
+</code>
+</pre>
+
+<p>
+Since the IDE has marked the Calculator red it can now be said that we are in the red state of the RGR workflow. To move to the next state, create the class.
+</p>
+
+<pre>
+<code class="java">
+// Calculator.java
+
+public class Calculator 
+{
+
+}
+</code>
+</pre>
+
+<p>
+Theres nothing to refactor, moving on.
+</p>
+
+<pre>
+<code class="java">
+// CalculatorTest.java
+
+@Test
+public void add() 
+{
+    Calculator calculator = new Calculator();
+    int result = calculator.add(1,2);
+}
+</code>
+</pre>
+
+<p>
+It is important not move too fast. Instead of implementing the add function completely, it's better to just start with the prototype (or what the IDE generates for you).
+</p>
+
+<pre>
+<code class="java">
+// Calculator.java
+
+public class Calculator
+{
+    public int add(int first, int second)
+    {
+       return 0;
+    }
+}
+</code>
+</pre>
+
+<p>
+Finally we can create our first assert.
+</p>
+
+<pre>
+<code class="java">
+// CalculatorTest.java
+
+@Test
+public void add() 
+{
+    Calculator calculator = new Calculator();
+    int result = calculator.add(1,2);
+    assertThat(result, is(3));
+}
+</code>
+</pre>
+
+<p>
+Some people might not have heard of hamcrest, so telling them to add
+<em>import static org.hamcrest.Matchers.*;</em> can be helpful. Now run the code to verify that it fails.
+</p>
+
+<p>
+We are finally allowed to implement add.
+</p>
+
+<pre>
+<code class="java">
+// Calculator.java
+
+public class Calculator 
+{
+    public int add(int first, int second)
+    {
+       return first + second;
+    }
+}
+</code>
+</pre>
+
+<p>
+Running the test gives us the green mark. Can we refactor anything? Was the name of the function descriptive? What about the arguments? Maybe addend1 and addend2 would be better than first and second?
+</p>
+<p>
+Moving on to the next task.
+Tell the participants to create a subtract function. Create the test first.
+</p>
+
+<pre>
+<code class="java">
+// CalculatorTest.java
+
+@Test
+public void subtract() 
+{
+    Calculator calculator = new Calculator();
+    int result = calculator.subtract(1,2);
+}
+</code>
+</pre>
+
+<p>
+Adding the missing method...
+</p>
+
+<pre>
+<code class="java">
+// Calculator.java
+
+public int subtract(int first, int second)
+{
+    return 0;
+}
+</code>
+</pre>
+
+<p>
+...and asserting the result.
+</p>
+
+<pre>
+<code class="java">
+// CalculatorTest.java
+
+@Test
+public void subtract() 
+{
+    Calculator calculator = new Calculator();
+    int result = calculator.subtract(1,2);
+    assertThat(result, is(-1));
+}
+</code>
+</pre>
+
+<p>
+Make sure that we have a failing test by running it. Now we can create the solution.
+</p>
+
+<pre>
+<code class="java">
+// Calculator.java
+
+public int subtract(int first, int second)
+{
+    return first - second;
+}
+</code>
+</pre>
+
+<p>
+Since this puts us in green, we can now refactor. The refactor step does not only involve the implementation, it also involves the tests. We could extract the Calculator instantiation. 
+</p>
+
+<pre>
+<code class="java">
+// CalculatorTest.java
+
+public class CalculatorTest {
+
+    private Calculator calculator;
+
+    @Before
+    public void setUp()
+    {
+        calculator = new Calculator();
+    }
+
+    @Test
+    public void add()
+    {
+        int result = calculator.add(1, 2);
+        assertThat(result, is(3));
+    }
+
+    @Test
+    public void subtract()
+    {
+        int result = calculator.subtract(1, 2);
+        assertThat(result, is(-1));
+    }
+}
+</code>
+</pre>
+
+<p>
+So this was just a short description of the start of the workshop. There are plenty of things that can be added, and I will write more about those in the following posts.   
+</p>

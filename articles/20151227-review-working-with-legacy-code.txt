@@ -1,0 +1,56 @@
+<h2>Book review: Working effectively with legacy code</h2>
+<p>16-02-18</p>
+
+<p>                                                                                 
+One of my colleagues recommended me to read the book Working effectively with legacy code. Since I'm working with some legacy code, I thought it would be a useful read. In this post I'll write my reflections on its content.
+</p>                                                                                
+                                                                                    
+<h3>Summary</h3>                                                                    
+<p>                                                                                 
+The book focuses on how to safely add or modify functionality in legacy code bases. It contains techniques on how to do so, and also on how to deal with situations where implementing changes are difficult. As a bonus, it covers interesting parts on design and class analysis.
+</p>                                                                                
+                                                                                    
+<h3>How to read</h3>                                                                
+<p>The book is split into three parts. Part one is about making changes in general. The second part contains common issues that one encounters when working with legacy code, and suggestions on how to resolve them. Each suggestion references appropriate techniques that are listed in part three.  
+Given this structure, I found it difficult to read from cover to cover. I would suggest reading part one, and then get familiar with the techniques in part three. Part two is pretty substantial, and not written to be read from beginning to end. However, it does include plenty of bits that are interesting even though the scenarios themselves might not match one's needs.   
+</p>                                                                                
+                                                                                    
+<h3>What I appreciated</h3>                                                         
+<p>                                                                                 
+Working with legacy code can be tiresome. It can be difficult to test and change, and sometimes, to understand. The author focuses especially on this. He also gives advice on how to motivate the team when problems seem insurmountable.
+</p>                                                                                
+                                                                                    
+<h3>Small steps</h3>                                                                
+<p>                                                                                 
+At first, it puzzled me why the author devoted so much energy on avoiding refactoring the code. I then realized that the code I'm working with probably is not as fragile as the one the author refers to. The techniques presented are not broad strokes, they're more comparable to that of a surgeon's.
+</p>
+
+<h3>What I'll bring with me</h3>                                                    
+<ul>                                                                                
+    <li>Seams are what the author calls places in the code where behavior can be altered. There are multiple types of seams that can be used depending on the situation. I'll be putting more effort into using effective seams.</li>
+    <li>Take as small steps as possible when refactoring.</li>                      
+    <li>If I feel the need to test a private method, and do not feel comfortable making it public, I'll more often consider extracting it to a new class.</li>
+    <li>Analyzing code through feature and effect sketches might seem overkill but I think it can greatly improve understanding and reasoning.</li>
+    <li>Characterization tests for when making larger refactoring work. There are usually integration tests written already, but for situations when there aren't, it's worth the extra work.</li>
+    <li>Recognizing that many unit tests for one class might tell that the class has too many responsibilities. Likewise for a class having many protected and private methods.</li>
+    <li>Getting into the habit of explaining the whole system using the techniques "telling the story of a system" and "naked CRC" - to help understanding and finding areas to improve.</li>
+    <li>Not giving up on a system - "design is never finished".</li>                
+    <li>More often consider renaming classes to change how the class is perceived.</li>
+</ul>                                                                               
+                                                                                    
+<h3>Techniques</h3>                                                                 
+<p>                                                                                 
+The book mentions plenty of useful techniques, I'm listing a few of them below.  
+</p>
+<ul>                                                                                
+    <li>Sprout class - extract a class from the code when implementing a feature. Allows easier testing.</li>
+    <li>Wrap method/class - decorator pattern. Good for keeping things separated.</li>
+    <li>Extract interface or subclass and override - indispensable for breaking dependencies.</li>
+    <li>Parametrize constructor - same as the above</li>                            
+    <li>Skin and wrap - abstracting away third party libraries helps testing and allows easier switching of providers</li>
+</ul>                                                                            
+
+<h3>Relating to how I work</h3>                                                  
+<p>                                                                              
+As I wrote earlier, even if I work with legacy systems, I'm not used to work with code that has problematic dependencies. The difficulties that I usually face are shoehorning in functionality and poor requirements. That is why the "design is never finished" quote appealed to me, and pushes me to put more effort into analysis before implementation.
+</p>  

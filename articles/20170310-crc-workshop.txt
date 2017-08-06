@@ -1,0 +1,53 @@
+<h2>CRC workshop</h2>
+<p>17-03-10</p>
+<p>
+After having read the book <em>Object Design: Roles, Responsibilities, and Collaborations</em>, I was inspired to introduce my colleagues to CRC (candidates, responsibilities and collaborators) by holding a workshop. This post aims to help anyone create a similar workshop, in case it might be of use for someone else. The slides can be found <a href="/static/pdf/crc.pdf"/>here</a>.
+</p>
+<p>
+Responsibility driven design is a large subject, so I've picked the parts that I thought would be the most useful for the team at the moment, namely CRC and control styles. With these tools, I hope to address one of our goals, which is for our modules to become more expressive, and not only consist of services and repositories.   
+</p>
+
+<h4>Candidates</h4>
+<p>
+I skip the notion of roles and just talk about candidates, which might be perceived to be less abstract. Being in Java land, using classes instead of candidates, makes it even more concrete. 
+</p>
+<h4>Responsibilities</h4>
+<p>
+A candidate's purpose stems from it's responsibilities. The level of abstraction that describes a responsibility, depends on what detail is actually needed. As an example, in one context, the responsibility "Handle requests" is too vague, but in another context it might be just enough. 
+</p>
+<h4>Collaborators</h4>
+<p>
+Whoever a class calls to fulfill it's responsibilities. This counts classes that are passed as arguments, as well as classes that are called statically.  
+</p>
+
+<h3>The CRC card</h3>
+<p>
+Usually each candidate has at least one responsibility and collaborator (unless it's a so called Information holder, in which case it might not have any collaborators).
+</p>
+
+<h3>The motivation to use CRC</h3>
+<p>
+When developers design, my guess is that they do most of the design in their heads. With experience, this might be enough to solve common tasks. But as problems and solutions become more complex, is useful to have a way to reduce the cognitive load, i.e. writing CRC cards for the relevant classes. Also, I find it useful for analyzing and understanding larger code bases. 
+</p>
+
+<h3>An example</h3>
+<p>
+To help everyone get started, design a water boiler on the whiteboard. Is the candidate "Water boiler" enough? It all depends on how much control and complexity that is involved. Having code examples might help to concretize the design, although I haven't felt the need for it.
+</p>
+
+<h3>Control style</h3>
+<p>
+Relating to the above exercise, showing the pros and cons with different control styles is useful. I chose to only talk about centralized and delegated, as they are the most beneficial. 
+</p>
+
+<h3>Exercises</h3>
+<p>
+Having done the water boiler example, it's time for the everyone to do a design on their own. In this case it's to design a bike, but perhaps a more software inspired exercise is better. In our case, the exercise was nonetheless successful as everyone became enthusiastic and produced well thought out solutions. 
+<br/>
+The design exercise is followed by an analysis of a class from our code base. Just translate the code into a CRC card. Then a short discussion to see if the class could be improved in any way, maybe it could delegate some responsibilities to a new candidate.
+</p>
+
+<h3>Stereotypes</h3>
+<p>
+I would like to find a better way to introduce stereotypes. I'm worried that introducing them before the example and exercises would cause information overload, but doing it afterwards makes them seem unnecessary. It's a useful tool for figuring out more information about a candidate - maybe you thought it was a service provider, but it turns out to be an information holder, this knowledge could influence the design. For each stereotype, I try to relate it to candidates introduced earlier. 
+</p>
