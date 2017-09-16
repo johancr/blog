@@ -1,7 +1,7 @@
 <h2>Presentation on modularity</h2>
     <p>17-05-24</p>
 <p>
-By holding a presentation on the subject of modularity, I'm hoping to spark some interest in the team to think more about modularity when developing. 
+By giving a presentation on the subject of modularity, I'm hoping to spark some interest in the team to think more about modularity when developing.
 The slides can be found <a href="/static/pdf/modularity.pdf">here</a>.
 </p>
 <p>
