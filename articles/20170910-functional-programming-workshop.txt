@@ -1,0 +1,102 @@
+<h2>Functional programming workshop</h2>
+<p>17-09-10</p>
+
+<p>
+With Java 8, functional programming got more accessible to Java developers, but the new functional constructs are sometimes misunderstood. The typical example is Optional, which I've seen used in a lot of different ways. Below are just some examples.
+</p>
+
+<pre>
+<code>
+public void contact(Optional&lt;Customer&gt; customer) {
+    if (customer.isPresent() {
+        customer.ifPresent(this::contactCustomer); 
+    }
+    else {
+        contactAllCustomers();
+    }
+}
+</code>
+</pre>
+
+<p>
+In the above example, an empty Optional signifies that all customers should be contacted, whilst if it contains a customer, then only that customer should be contacted. Not very intuitive. 
+</p>
+
+<p>
+Another usage I've seen is the following one.
+</p>
+
+<pre>
+<code>
+public void responseHandler(Response response) {
+
+    Request request = requestRepository.find(response.getMessageId())
+                                       .orElseThrow(() -> new IllegalStateException("Could not find matching request"));
+    Rule rule = ruleRepository.find(request.getRuleId())
+                                       .orElseThrow(() -> new IllegalStateException("Could not find rule matching response"));
+   // ...do stuff
+}
+</code>
+</pre>
+
+<p>
+It's a step forward in that it's explicit about handling unexpected results, but it could be made easier to compose.
+</p>
+
+<h3>Need for more understanding</h3>
+<p>
+Just like my colleagues I didn't know the correct use of Optional when I first saw it. So I began studying functional programming. 
+</p>
+
+<p>
+I've read plenty of books on the subject, but the ones I enjoyed the most were Functional Programming in Java by Pierre-Yves Saumont, and Functional Programming in Scala by Paul Chiusano and Runar Bjarnason. Both books contain an enormous amount of exercises, and it's from these that I've learned the most. 
+</p>
+<p>
+I've completed two of the Scala courses on Coursera, but I think they serve best as an introduction, the books mentioned above are still indispensable. 
+</p>
+
+<h3>The workshop</h3>
+<p>
+In order to share my newfound knowledge, I've put together a functional programming workshop for my colleagues. It starts with a short presentation, and ends with coding exercises. The goal is to give my colleagues an introduction to functional programming so that we can start incorporating the concepts in our code. The slides can be found <a href="/static/pdf/functional_programming.pdf">here</a>, and the repository <a href="https://github.com/johancr/functional-programming-workshop">here</a>. The following sections describe the main parts of the workshop.
+</p>
+
+<h3>Defining functional programming</h3>
+<p>
+Understanding what functional programming really means has taken me quite a while. At the moment my rule of thumb is to first avoid side effects, and when that's not possible, try to control them. There are of course more things to it, such as immutability, recursion, laziness etc. I don't cover these in the presentation but the first two are pretty self explanatory - and focusing on minimizing side effects will naturally lead to using these techniques. 
+</p>
+
+<h3>Category theory</h3>
+<p>
+You can of course practice functional programming without knowing about category theory. However, I believe it might help to know that it's from category theory which some of the terminology used in functional programming comes from.
+</p>
+
+<h3>Benefits</h3>
+<p>
+I think it might be difficult to convince non functional programmers why it's worth the effort to program functionally, it wasn't easy convincing myself. Somehow you must show that small improvements greatly impacts the effectiveness of large code bases. 
+</p>
+<h4>Managing side effects</h4>
+<p>
+In the test package named niro, I try to show what code might look like depending on how you handle side effects. In CompositionTest, we imagine a perfect world where we only need to chain functions and get the result we want. But since there is no such place, that code won't work. Instead we look at NullTest, where almost every method might return null, which we need to check every time we call a function - not very ideal. The next step is to use Option to help manage the case when there is no value to return. In OptionTest we see that the code looks similar to the composition example. However, depending on our use case, we might consider a lack of value to actually be an error, and want to throw an exception. Throwing exceptions means that you lose composability, as seen in ExceptionTest. To solve this, we turn to AttemptTest where we regain the ability to compose by using Attempt. Attempt signifies a computation resulting in a value or an exception, in Scala this is Try.
+</p>
+<h4>Easier testing</h4>
+<p>
+I would like to argue that testing is easier when using partial application, but partial application doesn't sound like anything new to an object oriented programmer. In a way, objects are already partially applied functions.
+</p>
+<h4>Declarative vs. Imperative</h4>
+<p>
+Another benefit is that functional program is declarative and not imperative. Again, I find it difficult to argue the positive effects of declarative programming by just comparing one code snippet to another - it needs real code to do it justice.   
+</p>
+
+<h3>Exercises</h3>
+<p>
+In one of the exercises, I implement Attempt together with the audience. Doing this exercise together shows how easy and useful it is to create these type of powerful constructs. The following list contains the first steps on how to arrive at a solution. 
+</p>
+<ul>
+    <li>We want to create a context in which we can execute a function that throws an exception. We name this context Attempt. Create an empty test case</li>
+    <li>Create a function, dangerousFunction, which throws an exception. Call it in the test like this: Attempt.of(() -> dangerousFunction())</li>
+    <li>Create the function of, it takes a Supplier and calls it. The result is put into a subclass, named Success, of the abstract class named Attempt</li>
+    <li>Run the test, see that it blows up. We need to do a try catch, and if an exception is thrown, return a Failure which is another subclass of Attempt</li>
+    <li>Run the test, see that it's green. Now We want to perform different actions depending on if it succeeded or failed</li>
+    <li>If it's a failure, we might want to print it to the screen. Create the abstract method onFailure. It takes a Consumer as an argument</li>
+    <li>What do we do in the success case? Nothing. If it's a failure, we send the exception to a Consumer. In the test we pass System.err::println</li>
+</ul>
