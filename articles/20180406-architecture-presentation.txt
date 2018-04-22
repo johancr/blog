@@ -1,0 +1,18 @@
+<h1>Architecture presentation</h1>
+<p>2018-04-06</p>
+
+<p>
+I've read the book Clean Architecture by Robert C. Martin. It contains a lot of good advice on design, and I especially enjoyed the parts about SOLID and the component principles. Before reading the book, I hadn't given these principles much thought, thinking that they were superfluous. However, they turn out to be guiding me daily in my work. 
+</p>
+
+<p>
+I put together a presentation for my colleagues to show the concepts that I thought were the most interesting. It can be found <a href="/static/pdf/architecture.pdf">here</a>.
+</p>
+
+<p>
+Coming up with concrete examples was essential for me to better understand the principles. At the time I was working on project related to sports betting regulations, so naturally the examples are from that domain. 
+</p>
+
+<p>
+The presentation sparked some interesting discussions. As my colleague said, these are principles that we follow naturally, but it's good to have a name and definition so that we can better reason about our decisions. 
+</p>
