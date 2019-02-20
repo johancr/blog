@@ -1,0 +1,35 @@
+<h2>Study circle: User stories</h2>
+<p>19-02-20</p>
+<p>
+I've recently started a study circle together with some friends. We meet once a week to help each other learn more on a specific subject. One of this week's subjects was user stories. Since it was my suggestion, I briefly explained what user stories are and their purpose. We then did some exercises that I had prepared. I think the exercises turned out well so I want to share them.
+</p>
+
+<h3>The first exercise</h3>
+<p>
+Ask everyone to make a user story for the feature “adding a friend on facebook”.
+When they are done, ask each one to read their user story out loud. Then talk about the first sentence. Some might have written: As a user. Others: As a facebook user. You can discuss how specific you need to be when specifying a role. A user in the facebook domain might not be specific enough since there are more types of users than the type most facebook users are.
+</p>
+<p>
+The next sentence is the feature: I want to be able to add a friend. One observation could be that it is not clear how the friend can be added. Is  it added instantly, or do you need to send a request that the receiver can reject or approve?
+</p>
+<p>
+The last sentence, the one describing the benefit, can be of many variations. This is where the exercise gets fun because you can come up with a lot of reasons for wanting the feature. 
+</p>
+<p>
+It’s important to be honest with the benefit. For example, if the benefit is “So that I can learn if we are truly friends or not”, then that information can help the team come up with a better solution to achieve the benefit.
+</p>
+
+<h3>The second exercise</h3>
+<p>
+This one is about creating a user story from a vague requirement. I pretend to be a product owner who wants the feature “history”. The others then ask me questions to get more information about the feature. Among other things, they ask what the benefit is, to which I can reply: “to see who has made changes to the project”. I encourage them to ask why multiple times, to really get to the bottom why I want this feature. With this information they can propose a solution which is easier to implement than the original history feature.
+</p>
+
+<h3>Final words</h3>
+<p>
+Currently there are two main things that we do in the study circle meetings. One thing is a structured discussion about a subject. Before each meeting, we distribute a few questions about the subject so that everyone can prepare answers. The discussion is then based on theses questions. The other thing is having exercises, they are fun and engages everyone.
+</p>
+<p>
+I want to learn more about managing study circles, and I hope that the one we have will grow big.
+</p>
+
+
