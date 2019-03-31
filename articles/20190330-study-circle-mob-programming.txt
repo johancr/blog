@@ -1,0 +1,33 @@
+<h2>Study circle: Mob programming</h2>
+<p>19-03-30</p>
+<p>
+In a recent study circle meeting, we tried the concept of mob programming. However, I was slightly concerned that we didn't have a task to work on that would show how powerful mob programming can be.
+</p>
+<p>
+In a working environment, mob programming can be done on actual backlog items. In that situation, everyone has domain knowledge that they can contribute with, which is one of the main strengths of mob programming. What we did instead was to come up with a task that could be finished in a short time, as well as being possible to extend, and without needing specific knowledge to solve. The task we chose was to create an authentication component.
+</p>
+<h3>The way of working</h3>
+<p>
+One person began taking the role of the driver, sitting by the computer that is hooked up to a projector. The driver is not allowed to write any other code than what the others, the navigators, tell the driver to write. The navigators discuss the next move, come to agreement and then ask the driver to write the code. After some time, maybe 10 minutes, the role of the driver is given to another person. This continues until the time is up.
+</p>
+<p>
+In our case, we started to write a script that asked for a username and a password. We then extended the functionality by adding on password verification, error handling, possibility to register new users etc.
+</p>
+
+<h3>Evaluation</h3>
+<p>
+After having spent about an hour, we wrapped up and discussed the experience. Here are some things that we learned.
+</p>
+<ul>
+  <li>It's fun to cooperate so intensely</li>
+  <li>Being the driver is difficult, you have a hard time refraining from writing code on your own initiative</li> 
+  <li>We all shared and acquired new knowledge on how to write better code</li> 
+  <li>The task took a longer time to finish than if we would have done it solo, but the result was better</li> 
+  <li>As a navigator, you can more easily reason about the problem by not having to focus on what code to actually write</li> 
+  <li>It takes practice to clearly specify what the driver should do</li> 
+</ul>
+
+<p>
+I was happy that we found a task that fit well. The task I had prepared was to write a cache mechanism, but I'm glad that I did ask the others for suggestions since the requirements for an authentication component are easier to grasp.
+</p>
+
