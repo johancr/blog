@@ -1,5 +1,5 @@
 <h2>BDD and mob programming</h2>
-2016-04-26
+<p>2016-04-26</p>
 
 <p>
 I recently saw a <a href="https://www.youtube.com/watch?v=8cy64qkgTyI">presentation</a> from JFokus on mob programming. Before having seen the presentation I was dismissive towards the practice, wondering how that would ever be cost-effective. But I've changed my mind now that I can see the benefits that it brings. It's not about working more efficiently, it's about sharing knowledge. 
@@ -31,12 +31,15 @@ Since we're using Guice for injecting entity managers, they need to be created b
 <h3>Our first user story</h3>
 <p>
 The story that we started with was something like the following: 
+</p>
 <pre>
 	As a developer
 	I want a transaction api
 	So that I can begin, commit and rollback transactions
 </pre>
+<p>
 The first scenario to this user story was then:
+</p>
 <pre>
 	Scenario: Begin a transaction
 	Given a transaction context

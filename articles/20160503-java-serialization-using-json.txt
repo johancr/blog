@@ -1,5 +1,5 @@
 <h2>Java serialization using json</h2>
-2016-05-03
+<p>2016-05-03</p>
 
 <p>
 One of our projects is based on services that communicate using SOAP and RMI, and these services share some common code, like exceptions. 

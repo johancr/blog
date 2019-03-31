@@ -25,6 +25,7 @@ I've looked for tools that could help me tell how modular the system is, e.g. if
 </p>
 <p>
 The other tools that I looked at were the following.
+</p>
 <ul>
     <li>JArchitect</li>
     <li>Classcycle</li>
@@ -33,7 +34,6 @@ The other tools that I looked at were the following.
     <li>slizaa</li>
     <li>Class Dependency Analyzer</li>
 </ul> 
-</p>
 
 <h3>Example usage of JDepend</h3>
 <p>

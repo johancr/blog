@@ -1,4 +1,4 @@
-<h1>Architecture presentation</h1>
+<h2>Architecture presentation</h2>
 <p>2018-04-06</p>
 
 <p>

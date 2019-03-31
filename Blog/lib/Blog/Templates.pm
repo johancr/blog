@@ -23,19 +23,24 @@ use constant BLOG => << '_END_';
         <title>Cronsioe blog</title>
         <link href="static/css/main.css" type="text/css" rel="stylesheet"/>
         <link href="static/css/default.css" type="text/css" rel="stylesheet"/>
-        <script src="static/js/jquery-1.11.1.min.js" type="text/javascript"></script>
-        <script src="static/js/script.js" type="text/javascript"></script>
-        <script src="static/js/highlight.pack.js" type="text/javascript"></script>
+        <script src="static/js/jquery-1.11.1.min.js"></script>
+        <script src="static/js/highlight.pack.js"></script>
         <script>
-
-            function load_articles()
-            {
-                $.each($('#section-container div'), function(index, value) {
-                    $(value).load('/articles/' + value.id);
-                });
-            }
             $( document ).ready(function() {
                 hljs.initHighlightingOnLoad();
+
+                $('section').slice(1).each(function() { 
+                    $(this).children().not('h2').hide();
+                });
+
+                $('h2').slice(1).each(function() { 
+                    $(this).append('<span style=cursor:pointer> [+]</span>'); 
+                });
+
+                $('h2 > span').click(function() { 
+                    $(this).parent().parent().children().show(); 
+                    $(this).remove();
+                });
             });
         </script>
     </head>

@@ -1,5 +1,5 @@
 <h2>Lessons from a recent project</h2>
-15-12-22
+<p>15-12-22</p>
 <p>
 My team recently finished working on a project for another division. The project was time critical, so two developers were added to our team. It was a valuable experience for me to work on a project that was so demanding, and together with two unfamiliar developers. This post is my reflection on this experience.
 </p>

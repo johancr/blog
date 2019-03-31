@@ -1,7 +1,7 @@
 <h2>CRC workshop</h2>
 <p>17-03-10</p>
 <p>
-After having read the book <em>Object Design: Roles, Responsibilities, and Collaborations</em>, I was inspired to introduce my colleagues to CRC (candidates, responsibilities and collaborators) by holding a workshop. This post aims to help anyone create a similar workshop, in case it might be of use for someone else. The slides can be found <a href="/static/pdf/crc.pdf"/>here</a>.
+After having read the book <em>Object Design: Roles, Responsibilities, and Collaborations</em>, I was inspired to introduce my colleagues to CRC (candidates, responsibilities and collaborators) by holding a workshop. This post aims to help anyone create a similar workshop, in case it might be of use for someone else. The slides can be found <a href="/static/pdf/crc.pdf">here</a>.
 </p>
 <p>
 Responsibility driven design is a large subject, so I've picked the parts that I thought would be the most useful for the team at the moment, namely CRC and control styles. With these tools, I hope to address one of our goals, which is for our modules to become more expressive, and not only consist of services and repositories.   
